@@ -24,3 +24,34 @@ jobs:
         run: test -s .next/BUILD_ID
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
+
+  approval:
+    name: Approve before merge
+    needs: verify
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    environment: merge-approval
+    steps:
+      - run: echo "Manual approval received."
+
+  merge:
+    name: Merge after approval
+    needs: approval
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Squash-merge the approved pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR_NUMBER" --squash --delete-branch
+      - name: Start the Pages deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main

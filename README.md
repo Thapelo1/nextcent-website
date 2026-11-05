@@ -27,4 +27,4 @@ Install the Playwright Chromium browser once with `npx playwright install chromi
 
 ## Deployment
 
-Pull requests targeting `main` run unit tests, a production build, and Playwright browser tests. With GitHub auto-merge enabled on a pull request, it is squash-merged after a required human approval and passing checks. Merges to `main` build a static site and deploy it to GitHub Pages.
+Pull requests targeting `main` run unit tests, a production build, and Playwright browser tests. After those checks pass, the `merge-approval` environment requires a manual approval before the workflow squash-merges the pull request. The workflow then starts a GitHub Pages deployment.
