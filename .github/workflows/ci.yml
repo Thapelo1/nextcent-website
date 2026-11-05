@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify build and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:unit
+      - run: npm run build
+      - name: Verify production build output
+        run: test -s .next/BUILD_ID
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+
+  approval:
+    name: Approve before merge
+    needs: verify
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    environment: merge-approval
+    steps:
+      - run: echo "Manual approval received."
+
+  merge:
+    name: Merge after approval
+    needs: approval
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Squash-merge the approved pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: gh pr merge "$PR_NUMBER" --repo "$REPOSITORY" --squash --delete-branch
+      - name: Start the Pages deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: gh workflow run deploy.yml --repo "$REPOSITORY" --ref main

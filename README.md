@@ -18,8 +18,13 @@ Open [http://localhost:3000](http://localhost:3000) to view the site.
 - `npm run dev` starts the development server.
 - `npm run build` creates a production build.
 - `npm start` serves the production build.
+- `npm run test:unit` runs the unit tests.
 - `npm run test:e2e` builds the app and runs its Playwright end-to-end tests against the production server.
 
 ## End-to-end tests
 
 Install the Playwright Chromium browser once with `npx playwright install chromium`, then run `npm run test:e2e`. The test command builds the app, starts it on port 4173, and exercises the home page and its working navigation links. In CI, install dependencies and Chromium before running `npm run test:e2e`.
+
+## Deployment
+
+Pull requests targeting `main` run unit tests, a production build, and Playwright browser tests. After those checks pass, the `merge-approval` environment requires a manual approval before the workflow squash-merges the pull request. The workflow then starts a GitHub Pages deployment.
